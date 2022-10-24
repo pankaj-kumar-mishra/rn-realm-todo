@@ -2,6 +2,7 @@ import React, {FC, useState, useEffect} from 'react';
 import {FlatList, StyleSheet, View} from 'react-native';
 import {AddInput, ListItem} from '../components';
 import realm, {
+  deleteTodoList,
   getAllTodoList,
   TODOLIST_SCHEMA,
 } from '../../database/allSchemas';
@@ -16,6 +17,7 @@ export type TodoType = {
 
 const Home: FC<Props> = (): JSX.Element => {
   const [todoList, setTodoList] = useState<TodoType[]>([]);
+  const [currentItem, setCurrentItem] = useState<TodoType>();
 
   const handleGetTodoList = async () => {
     try {
@@ -34,7 +36,7 @@ const Home: FC<Props> = (): JSX.Element => {
   useEffect(() => {
     const lists = realm.objects(TODOLIST_SCHEMA);
 
-    lists.addListener(() => {
+    lists.addListener((data, changes) => {
       // callback has data and changes
       // console.log('In Listener data', data);
       // console.log('In Listener changes', changes);
@@ -42,6 +44,11 @@ const Home: FC<Props> = (): JSX.Element => {
       // setTodoList(data as any); // it has some rendering issue
 
       handleGetTodoList();
+
+      // console.log(changes);
+      if (changes.newModifications.length > 0) {
+        setCurrentItem(undefined);
+      }
     });
 
     return () => {
@@ -53,9 +60,23 @@ const Home: FC<Props> = (): JSX.Element => {
     };
   }, []);
 
+  const handleEdit = (item: TodoType) => {
+    console.log(item);
+    setCurrentItem(item);
+  };
+
+  const handleDelete = async (id: number) => {
+    try {
+      const deletedTodo = await deleteTodoList(id);
+      console.log('Deleted todo', deletedTodo);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
   return (
     <View style={styles.container}>
-      <AddInput />
+      <AddInput item={currentItem} todoLength={todoList.length} />
       <FlatList
         data={todoList}
         keyExtractor={item => item._id.toString()}
@@ -67,6 +88,8 @@ const Home: FC<Props> = (): JSX.Element => {
               _id={item._id}
               name={item.name}
               createdOn={item.createdOn}
+              onEditPress={() => handleEdit(item)}
+              onDeletePress={() => handleDelete(item._id)}
             />
           );
         }}

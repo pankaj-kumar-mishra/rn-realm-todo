@@ -1,11 +1,27 @@
-import React, {FC, useState} from 'react';
+import React, {FC, useState, useEffect} from 'react';
 import {StyleSheet, View, Text, TextInput, Pressable} from 'react-native';
-import {insertNewTodoList} from '../../database/allSchemas';
+import {
+  deleteAllTodoList,
+  insertNewTodoList,
+  updateTodoList,
+} from '../../database/allSchemas';
+import {TodoType} from '../screens/Home';
 
-interface Props {}
+interface Props {
+  item?: TodoType;
+  todoLength: number;
+}
 
-const AddInput: FC<Props> = (): JSX.Element => {
+const AddInput: FC<Props> = ({item, todoLength}): JSX.Element => {
   const [text, setText] = useState('');
+
+  useEffect(() => {
+    if (item?.name) {
+      setText(item.name);
+    } else {
+      setText('');
+    }
+  }, [item?.name]);
 
   const handleAdd = async () => {
     const name = text.trim();
@@ -13,33 +29,65 @@ const AddInput: FC<Props> = (): JSX.Element => {
       return;
     }
 
-    const data = {
-      _id: Math.floor(Date.now() / 1000),
-      name,
-      createdOn: new Date(),
-    };
-    console.log(data);
+    if (item) {
+      const data = {
+        _id: item._id,
+        name,
+        createdOn: item.createdOn,
+      };
+      console.log(data);
+      try {
+        const insertedTodo = await updateTodoList(data);
+        console.log('Updated Todo', insertedTodo);
+        setText('');
+      } catch (error) {
+        console.log('Screen Error', error);
+      }
+    } else {
+      const data = {
+        _id: Math.floor(Date.now() / 1000),
+        name,
+        createdOn: new Date(),
+      };
+      console.log(data);
+      try {
+        const insertedTodo = await insertNewTodoList(data);
+        console.log('Inserted Todo', insertedTodo);
+        setText('');
+      } catch (error) {
+        console.log('Screen Error', error);
+      }
+    }
+  };
+
+  const handleDeleteAll = async () => {
     try {
-      const insertedTodo = await insertNewTodoList(data);
-      console.log('Inserted Todo', insertedTodo);
-      setText('');
+      const deletedAll = await deleteAllTodoList();
+      console.log('Deleted All Todos', deletedAll);
     } catch (error) {
-      console.log('Screen Error', error);
+      console.log(error);
     }
   };
 
   return (
-    <View style={styles.container}>
-      <TextInput
-        style={styles.input}
-        placeholder="Enter Text"
-        value={text}
-        onChangeText={setText}
-      />
-      <Pressable onPress={handleAdd} style={styles.btn}>
-        <Text style={styles.btnText}>Add</Text>
-      </Pressable>
-    </View>
+    <>
+      {todoLength > 1 && (
+        <Pressable onPress={handleDeleteAll} style={styles.clearBtn}>
+          <Text style={styles.clearText}>Clear All</Text>
+        </Pressable>
+      )}
+      <View style={styles.container}>
+        <TextInput
+          style={styles.input}
+          placeholder="Enter Text"
+          value={text}
+          onChangeText={setText}
+        />
+        <Pressable onPress={handleAdd} style={styles.btn}>
+          <Text style={styles.btnText}>{item ? 'Update' : 'Add'}</Text>
+        </Pressable>
+      </View>
+    </>
   );
 };
 
@@ -70,6 +118,18 @@ const styles = StyleSheet.create({
   btnText: {
     fontSize: 16,
     fontWeight: '600',
+  },
+  clearBtn: {
+    // position: 'absolute',
+    // top: 0,
+    // zIndex: 1,
+    alignSelf: 'center',
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    backgroundColor: '#fff',
+  },
+  clearText: {
+    color: '#f00',
   },
 });
 

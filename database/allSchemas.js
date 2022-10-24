@@ -79,4 +79,55 @@ export const insertNewTodoList = newTodoList =>
     }
   });
 
+export const updateTodoList = todolist =>
+  new Promise(async (resolve, reject) => {
+    try {
+      const realm = await Realm.open(databaseOptions);
+      realm.write(() => {
+        // get todolist using specific ID
+        const updatingTodoList = realm.objectForPrimaryKey(
+          TODOLIST_SCHEMA,
+          todolist._id,
+        );
+        updatingTodoList.name = todolist.name;
+        resolve(updatingTodoList);
+      });
+    } catch (error) {
+      reject(error);
+    }
+  });
+
+export const deleteTodoList = todolistId =>
+  new Promise(async (resolve, reject) => {
+    try {
+      const realm = await Realm.open(databaseOptions);
+      realm.write(() => {
+        // get todolist using specific ID
+        const deletingTodoList = realm.objectForPrimaryKey(
+          TODOLIST_SCHEMA,
+          todolistId,
+        );
+        realm.delete(deletingTodoList);
+        resolve(true);
+      });
+    } catch (error) {
+      reject(error);
+    }
+  });
+
+export const deleteAllTodoList = () =>
+  new Promise(async (resolve, reject) => {
+    try {
+      const realm = await Realm.open(databaseOptions);
+      realm.write(() => {
+        // get all records of TodoList
+        const allTodoLists = realm.objects(TODOLIST_SCHEMA);
+        realm.delete(allTodoLists);
+        resolve(true);
+      });
+    } catch (error) {
+      reject(error);
+    }
+  });
+
 export default new Realm(databaseOptions);
