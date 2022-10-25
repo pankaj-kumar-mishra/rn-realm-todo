@@ -58,7 +58,21 @@ export const getAllTodoList = () =>
       const realm = await Realm.open(databaseOptions);
       realm.write(() => {
         // get all records of TodoList
-        const allTodoLists = realm.objects(TODOLIST_SCHEMA);
+        // const allTodoLists = realm.objects(TODOLIST_SCHEMA);
+
+        // For Sorting
+        const allTodoLists = realm
+          .objects(TODOLIST_SCHEMA)
+          .sorted('createdOn', true); // true => reverse(desc)
+
+        // For filtering
+        // const allTodoLists = realm
+        //   .objects(TODOLIST_SCHEMA)
+        //   .filter(item => item.name === 'C2');
+        // const allTodoLists = realm
+        //   .objects(TODOLIST_SCHEMA)
+        //   .filtered('name CONTAINS[c] "P"');
+
         resolve(allTodoLists);
       });
     } catch (error) {
