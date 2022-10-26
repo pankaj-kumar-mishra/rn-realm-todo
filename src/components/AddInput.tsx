@@ -28,12 +28,13 @@ const AddInput: FC<Props> = ({item, todoLength}): JSX.Element => {
     if (!name) {
       return;
     }
-
+    const currDate = new Date();
     if (item) {
       const data = {
         _id: item._id,
         name,
         createdOn: item.createdOn,
+        updatedOn: currDate,
       };
       console.log(data);
       try {
@@ -47,7 +48,8 @@ const AddInput: FC<Props> = ({item, todoLength}): JSX.Element => {
       const data = {
         _id: Math.floor(Date.now() / 1000),
         name,
-        createdOn: new Date(),
+        createdOn: currDate,
+        updatedOn: currDate,
       };
       console.log(data);
       try {

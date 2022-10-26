@@ -25,9 +25,10 @@ export const TodoListSchema = {
     _id: 'int',
     name: 'string',
     createdOn: 'date',
-    // updatedOn: 'date',  // i will add later
+    updatedOn: 'date',
+    done: {type: 'bool', default: false},
     // here todos as an array that hold multiple todo
-    todos: {type: 'list', objectType: TODO_SCHEMA},
+    // todos: {type: 'list', objectType: TODO_SCHEMA},
   },
 };
 
@@ -61,9 +62,9 @@ export const getAllTodoList = () =>
         // const allTodoLists = realm.objects(TODOLIST_SCHEMA);
 
         // For Sorting
-        const allTodoLists = realm
-          .objects(TODOLIST_SCHEMA)
-          .sorted('createdOn', true); // true => reverse(desc)
+        // const allTodoLists = realm
+        //   .objects(TODOLIST_SCHEMA)
+        //   .sorted('updatedOn', true); // true => reverse(desc)
 
         // For filtering
         // const allTodoLists = realm
@@ -73,7 +74,17 @@ export const getAllTodoList = () =>
         //   .objects(TODOLIST_SCHEMA)
         //   .filtered('name CONTAINS[c] "P"');
 
-        resolve(allTodoLists);
+        // resolve(allTodoLists);
+
+        // For Filtering and Sorting
+        const allTodoLists = realm
+          .objects(TODOLIST_SCHEMA)
+          .sorted('updatedOn', true);
+
+        const inprogressTodos = allTodoLists.filter(item => !item.done);
+        const doneTodos = allTodoLists.filter(item => item.done);
+
+        resolve({inprogressTodos, doneTodos});
       });
     } catch (error) {
       reject(error);
@@ -104,6 +115,7 @@ export const updateTodoList = todolist =>
           todolist._id,
         );
         updatingTodoList.name = todolist.name;
+        updatingTodoList.updatedOn = todolist.updatedOn;
         resolve(updatingTodoList);
       });
     } catch (error) {
@@ -144,4 +156,6 @@ export const deleteAllTodoList = () =>
     }
   });
 
-export default new Realm(databaseOptions);
+const realm = new Realm(databaseOptions);
+
+export default realm;

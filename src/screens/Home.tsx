@@ -13,22 +13,30 @@ export type TodoType = {
   _id: number;
   name: string;
   createdOn: Date;
+  updatedOn: Date;
 };
 
 const Home: FC<Props> = (): JSX.Element => {
   const [todoList, setTodoList] = useState<TodoType[]>([]);
   const [currentItem, setCurrentItem] = useState<TodoType>();
 
+  // i will implement later (inprogress and done)
+  // const [inProgressTodoList, setInProgressTodoList] = useState<TodoType[]>([]);
+  // const [doneTodoList, setDoneTodoList] = useState<TodoType[]>([]);
+
   const handleGetTodoList = async () => {
     try {
       const data = await getAllTodoList();
-      // console.log('Screen Data', data);
-      setTodoList(data);
+      console.log('Screen Data', data);
+      // setTodoList(data);
+
+      setTodoList([...data.inprogressTodos, ...data.doneTodos]);
     } catch (error) {
       console.log('Screen Error', error);
     }
   };
 
+  // Not required to fetch because we are handling in listener in changes
   // useEffect(() => {
   //   handleGetTodoList();
   // }, []);
@@ -87,7 +95,7 @@ const Home: FC<Props> = (): JSX.Element => {
             <ListItem
               _id={item._id}
               name={item.name}
-              createdOn={item.createdOn}
+              updatedOn={item.updatedOn}
               onEditPress={() => handleEdit(item)}
               onDeletePress={() => handleDelete(item._id)}
             />
