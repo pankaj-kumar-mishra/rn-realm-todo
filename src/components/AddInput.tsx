@@ -35,11 +35,12 @@ const AddInput: FC<Props> = ({item, todoLength}): JSX.Element => {
         name,
         createdOn: item.createdOn,
         updatedOn: currDate,
+        done: item.done,
       };
-      console.log(data);
+      //   console.log(data);
       try {
-        const insertedTodo = await updateTodoList(data);
-        console.log('Updated Todo', insertedTodo);
+        const updatedTodo = await updateTodoList(data);
+        console.log('Updated Todo', updatedTodo);
         setText('');
       } catch (error) {
         console.log('Screen Error', error);
@@ -51,7 +52,7 @@ const AddInput: FC<Props> = ({item, todoLength}): JSX.Element => {
         createdOn: currDate,
         updatedOn: currDate,
       };
-      console.log(data);
+      //   console.log(data);
       try {
         const insertedTodo = await insertNewTodoList(data);
         console.log('Inserted Todo', insertedTodo);

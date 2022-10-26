@@ -81,10 +81,10 @@ export const getAllTodoList = () =>
           .objects(TODOLIST_SCHEMA)
           .sorted('updatedOn', true);
 
-        const inprogressTodos = allTodoLists.filter(item => !item.done);
+        const inProgressTodos = allTodoLists.filter(item => !item.done);
         const doneTodos = allTodoLists.filter(item => item.done);
 
-        resolve({inprogressTodos, doneTodos});
+        resolve({inProgressTodos, doneTodos});
       });
     } catch (error) {
       reject(error);
@@ -116,6 +116,7 @@ export const updateTodoList = todolist =>
         );
         updatingTodoList.name = todolist.name;
         updatingTodoList.updatedOn = todolist.updatedOn;
+        updatingTodoList.done = todolist.done;
         resolve(updatingTodoList);
       });
     } catch (error) {

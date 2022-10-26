@@ -1,20 +1,52 @@
 import React, {FC} from 'react';
-import {StyleSheet, View, Text, Pressable} from 'react-native';
+import {StyleSheet, View, Text, Pressable, Switch} from 'react-native';
+import {deleteTodoList, updateTodoList} from '../../database/allSchemas';
 
 interface Props {
   _id: number;
   name: string;
+  createdOn: Date;
   updatedOn: Date;
+  completed: boolean;
   onEditPress: () => void;
-  onDeletePress: () => void;
 }
 
 const ListItem: FC<Props> = ({
+  _id,
   updatedOn,
+  createdOn,
   name,
+  completed,
   onEditPress,
-  onDeletePress,
 }): JSX.Element => {
+  const handleDelete = async () => {
+    try {
+      const deletedTodo = await deleteTodoList(_id);
+      console.log('Deleted todo', deletedTodo);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const handleDoneChange = async (done: boolean) => {
+    console.log(done);
+    const currDate = new Date();
+    const data = {
+      _id,
+      name,
+      createdOn,
+      updatedOn: currDate,
+      done,
+    };
+    //   console.log(data);
+    try {
+      const updatedTodo = await updateTodoList(data);
+      console.log('Updated Todo', updatedTodo);
+    } catch (error) {
+      console.log('Screen Error', error);
+    }
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.flex1}>
@@ -22,10 +54,18 @@ const ListItem: FC<Props> = ({
         <Text style={styles.date}>{updatedOn.toString()}</Text>
       </View>
       <View>
-        <Pressable onPress={onEditPress} style={[styles.btn, styles.editBtn]}>
+        <Pressable onPress={onEditPress} style={styles.btn}>
           <Text style={styles.btnText}>Edit</Text>
         </Pressable>
-        <Pressable onPress={onDeletePress} style={styles.btn}>
+        <Switch
+          trackColor={{false: '#f00', true: 'green'}}
+          // thumbColor={true ? 'goldenrod' : '#fff'}
+          thumbColor="goldenrod"
+          onValueChange={handleDoneChange}
+          value={completed}
+          style={styles.spacing}
+        />
+        <Pressable onPress={handleDelete} style={styles.btn}>
           <Text style={[styles.btnText, styles.danger]}>Delete</Text>
         </Pressable>
       </View>
@@ -35,7 +75,6 @@ const ListItem: FC<Props> = ({
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: 10,
     borderWidth: 1,
     borderColor: 'goldenrod',
     borderRadius: 5,
@@ -44,6 +83,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    marginBottom: 10,
   },
   flex1: {
     flex: 1,
@@ -73,6 +113,9 @@ const styles = StyleSheet.create({
   },
   danger: {
     color: '#f00',
+  },
+  spacing: {
+    marginVertical: 6,
   },
 });
 
