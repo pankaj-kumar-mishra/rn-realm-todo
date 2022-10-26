@@ -21,6 +21,7 @@ const DoneTodos: FC<Props> = ({todos, setCurrentItem}): JSX.Element => {
       keyExtractor={item => item._id.toString()}
       showsVerticalScrollIndicator={false}
       style={styles.flatList}
+      extraData={todos}
       ListEmptyComponent={() => (
         <Text style={styles.empty}>No Record Found</Text>
       )}

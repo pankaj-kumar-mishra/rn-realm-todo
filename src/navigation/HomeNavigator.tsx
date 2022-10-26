@@ -17,7 +17,11 @@ const HomeNavigator: FC<Props> = ({
   setCurrentItem,
 }): JSX.Element => {
   return (
-    <Tab.Navigator>
+    <Tab.Navigator
+      screenOptions={{
+        tabBarActiveTintColor: 'goldenrod',
+        tabBarIndicatorStyle: {backgroundColor: 'goldenrod'},
+      }}>
       <Tab.Screen
         name="InProgress"
         children={() => (

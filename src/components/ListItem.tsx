@@ -29,7 +29,7 @@ const ListItem: FC<Props> = ({
   };
 
   const handleDoneChange = async (done: boolean) => {
-    console.log(done);
+    // console.log(done);
     const currDate = new Date();
     const data = {
       _id,
@@ -84,6 +84,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: 10,
+    backgroundColor: '#fff',
   },
   flex1: {
     flex: 1,

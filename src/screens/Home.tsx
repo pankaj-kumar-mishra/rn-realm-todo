@@ -42,9 +42,11 @@ const Home: FC<Props> = (): JSX.Element => {
     const lists = realm.objects(TODOLIST_SCHEMA);
 
     lists.addListener((data, changes) => {
+      console.log('Data', data);
+      console.log('Changes', changes);
+
       handleGetTodoList();
 
-      // console.log(changes);
       if (changes.newModifications.length > 0) {
         setCurrentItem(undefined);
       }
@@ -55,7 +57,7 @@ const Home: FC<Props> = (): JSX.Element => {
         console.log('Unmounted');
       });
       // Remember to close the realm
-      realm.close();
+      // realm.close();
     };
   }, []);
 

@@ -28,7 +28,7 @@ export const TodoListSchema = {
     updatedOn: 'date',
     done: {type: 'bool', default: false},
     // here todos as an array that hold multiple todo
-    // todos: {type: 'list', objectType: TODO_SCHEMA},
+    todos: {type: 'list', objectType: TODO_SCHEMA},
   },
 };
 
