@@ -1,40 +1,30 @@
 import React, {FC} from 'react';
 import {StyleSheet, FlatList, Text} from 'react-native';
+import {RealmIdType} from '../../database/allSchemas';
 import {ListItem} from '../components';
 import {TodoType} from './Home';
 
 interface Props {
   todos: TodoType[];
-  setCurrentItem: (item: TodoType) => void;
+  setCurrentTodoId: (_id: RealmIdType) => void;
 }
 
-const InProgressTodos: FC<Props> = ({todos, setCurrentItem}): JSX.Element => {
-  // console.log(todos);
+const InProgressTodos: FC<Props> = ({todos, setCurrentTodoId}): JSX.Element => {
   const handleEdit = (item: TodoType) => {
-    // console.log(item);
-    setCurrentItem(item);
+    setCurrentTodoId(item._id);
   };
 
   return (
     <FlatList
       data={todos}
-      keyExtractor={item => item._id.toString()}
+      keyExtractor={item => item._id.toHexString()}
       showsVerticalScrollIndicator={false}
       style={styles.flatList}
       ListEmptyComponent={() => (
         <Text style={styles.empty}>No Record Found</Text>
       )}
       renderItem={({item}) => {
-        return (
-          <ListItem
-            _id={item._id}
-            name={item.name}
-            createdOn={item.createdOn}
-            updatedOn={item.updatedOn}
-            completed={item.done}
-            onEditPress={() => handleEdit(item)}
-          />
-        );
+        return <ListItem _id={item._id} onEditPress={() => handleEdit(item)} />;
       }}
     />
   );

@@ -1,75 +1,64 @@
 import React, {FC, useState, useEffect} from 'react';
-import {StyleSheet, View, Text, TextInput, Pressable} from 'react-native';
 import {
-  deleteAllTodoList,
-  insertNewTodoList,
-  updateTodoList,
+  StyleSheet,
+  View,
+  Text,
+  TextInput,
+  Pressable,
+  Alert,
+} from 'react-native';
+import TodoContext, {
+  RealmIdType,
+  TodoList,
+  TODOLIST_SCHEMA,
 } from '../../database/allSchemas';
-import {TodoType} from '../screens/Home';
+
+const {useRealm, useObject, useQuery} = TodoContext;
 
 interface Props {
-  item?: TodoType;
+  _id: RealmIdType;
   todoLength: number;
 }
 
-const AddInput: FC<Props> = ({item, todoLength}): JSX.Element => {
+const AddInput: FC<Props> = ({_id, todoLength}): JSX.Element => {
+  const realm = useRealm();
+  const todos = useQuery(TodoList);
+  const todo = useObject(TodoList, _id);
+  console.log('Curr Todo', todo);
+
   const [text, setText] = useState('');
 
   useEffect(() => {
-    if (item?.name) {
-      setText(item.name);
+    if (todo?.name) {
+      setText(todo.name);
     } else {
       setText('');
     }
-  }, [item?.name]);
+  }, [todo?.name]);
 
-  const handleAdd = async () => {
+  const handleAddUpdate = () => {
     const name = text.trim();
     if (!name) {
+      Alert.alert('Invalid Input!', 'Please enter something to add or update');
       return;
     }
-    const currDate = new Date();
-    if (item) {
-      const data = {
-        _id: item._id,
-        name,
-        createdOn: item.createdOn,
-        updatedOn: currDate,
-        done: item.done,
-      };
-      //   console.log(data);
-      try {
-        const updatedTodo = await updateTodoList(data);
-        console.log('Updated Todo', updatedTodo);
-        setText('');
-      } catch (error) {
-        console.log('Screen Error', error);
-      }
+
+    if (todo) {
+      realm.write(() => {
+        todo.name = name;
+      });
     } else {
-      const data = {
-        _id: Math.floor(Date.now() / 1000),
-        name,
-        createdOn: currDate,
-        updatedOn: currDate,
-      };
-      //   console.log(data);
-      try {
-        const insertedTodo = await insertNewTodoList(data);
-        console.log('Inserted Todo', insertedTodo);
-        setText('');
-      } catch (error) {
-        console.log('Screen Error', error);
-      }
+      realm.write(() => {
+        realm.create(TODOLIST_SCHEMA, TodoList.generate(name));
+      });
     }
+    setText('');
   };
 
-  const handleDeleteAll = async () => {
-    try {
-      const deletedAll = await deleteAllTodoList();
-      console.log('Deleted All Todos', deletedAll);
-    } catch (error) {
-      console.log(error);
-    }
+  const handleDeleteAll = () => {
+    realm.write(() => {
+      realm.delete(todos);
+    });
   };
 
   return (
@@ -86,8 +75,8 @@ const AddInput: FC<Props> = ({item, todoLength}): JSX.Element => {
           value={text}
           onChangeText={setText}
         />
-        <Pressable onPress={handleAdd} style={styles.btn}>
-          <Text style={styles.btnText}>{item ? 'Update' : 'Add'}</Text>
+        <Pressable onPress={handleAddUpdate} style={styles.btn}>
+          <Text style={styles.btnText}>{todo ? 'Update' : 'Add'}</Text>
         </Pressable>
       </View>
     </>

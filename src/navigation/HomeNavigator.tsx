@@ -2,19 +2,20 @@ import React, {FC} from 'react';
 import {createMaterialTopTabNavigator} from '@react-navigation/material-top-tabs';
 import {DoneTodos, InProgressTodos} from '../screens';
 import {TodoType} from '../screens/Home';
+import {RealmIdType} from '../../database/allSchemas';
 
 const Tab = createMaterialTopTabNavigator();
 
 interface Props {
   inProgressTodos: TodoType[];
   doneTodos: TodoType[];
-  setCurrentItem: (item: TodoType) => void;
+  setCurrentTodoId: (item: RealmIdType) => void;
 }
 
 const HomeNavigator: FC<Props> = ({
   inProgressTodos,
   doneTodos,
-  setCurrentItem,
+  setCurrentTodoId,
 }): JSX.Element => {
   return (
     <Tab.Navigator
@@ -27,14 +28,14 @@ const HomeNavigator: FC<Props> = ({
         children={() => (
           <InProgressTodos
             todos={inProgressTodos}
-            setCurrentItem={setCurrentItem}
+            setCurrentTodoId={setCurrentTodoId}
           />
         )}
       />
       <Tab.Screen
         name="Done"
         children={() => (
-          <DoneTodos todos={doneTodos} setCurrentItem={setCurrentItem} />
+          <DoneTodos todos={doneTodos} setCurrentTodoId={setCurrentTodoId} />
         )}
       />
     </Tab.Navigator>

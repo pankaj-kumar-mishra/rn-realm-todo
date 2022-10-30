@@ -1,57 +1,40 @@
 import React, {FC} from 'react';
 import {StyleSheet, View, Text, Pressable, Switch} from 'react-native';
-import {deleteTodoList, updateTodoList} from '../../database/allSchemas';
+import TodoContext, {RealmIdType, TodoList} from '../../database/allSchemas';
 
+const {useRealm, useObject} = TodoContext;
 interface Props {
-  _id: number;
-  name: string;
-  createdOn: Date;
-  updatedOn: Date;
-  completed: boolean;
+  _id: RealmIdType;
   onEditPress: () => void;
 }
 
-const ListItem: FC<Props> = ({
-  _id,
-  updatedOn,
-  createdOn,
-  name,
-  completed,
-  onEditPress,
-}): JSX.Element => {
-  const handleDelete = async () => {
-    try {
-      const deletedTodo = await deleteTodoList(_id);
-      console.log('Deleted todo', deletedTodo);
-    } catch (error) {
-      console.log(error);
+const ListItem: FC<Props> = ({_id, onEditPress}): JSX.Element => {
+  const realm = useRealm();
+  const todo = useObject(TodoList, _id);
+
+  const handleDoneChange = () => {
+    if (!todo) {
+      return;
     }
+    realm.write(() => {
+      todo.done = !todo?.done;
+    });
   };
 
-  const handleDoneChange = async (done: boolean) => {
-    // console.log(done);
-    const currDate = new Date();
-    const data = {
-      _id,
-      name,
-      createdOn,
-      updatedOn: currDate,
-      done,
-    };
-    //   console.log(data);
-    try {
-      const updatedTodo = await updateTodoList(data);
-      console.log('Updated Todo', updatedTodo);
-    } catch (error) {
-      console.log('Screen Error', error);
+  const handleDelete = () => {
+    if (!todo) {
+      return;
     }
+    realm.write(() => {
+      realm.delete(todo);
+    });
   };
 
   return (
     <View style={styles.container}>
       <View style={styles.flex1}>
-        <Text style={styles.name}>{name}</Text>
-        <Text style={styles.date}>{updatedOn.toString()}</Text>
+        <Text style={styles.name}>{todo?.name}</Text>
+        <Text style={styles.date}>{todo?.updatedOn.toString()}</Text>
       </View>
       <View>
         <Pressable onPress={onEditPress} style={styles.btn}>
@@ -62,7 +45,7 @@ const ListItem: FC<Props> = ({
           // thumbColor={true ? 'goldenrod' : '#fff'}
           thumbColor="goldenrod"
           onValueChange={handleDoneChange}
-          value={completed}
+          value={todo?.done}
           style={styles.spacing}
         />
         <Pressable onPress={handleDelete} style={styles.btn}>

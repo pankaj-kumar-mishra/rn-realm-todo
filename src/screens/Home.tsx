@@ -1,16 +1,19 @@
 import React, {FC, useState, useEffect, useMemo} from 'react';
 import {StyleSheet, View} from 'react-native';
 import {AddInput} from '../components';
-import realm, {
-  getAllTodoList,
-  TODOLIST_SCHEMA,
+import TodoContext, {
+  realmId,
+  RealmIdType,
+  TodoList,
 } from '../../database/allSchemas';
 import {HomeNavigator} from '../navigation';
+
+const {useQuery} = TodoContext;
 
 interface Props {}
 
 export type TodoType = {
-  _id: number;
+  _id: RealmIdType;
   name: string;
   createdOn: Date;
   updatedOn: Date;
@@ -18,47 +21,33 @@ export type TodoType = {
 };
 
 const Home: FC<Props> = (): JSX.Element => {
-  const [currentItem, setCurrentItem] = useState<TodoType>();
+  const todos = useQuery(TodoList);
+
+  const [currentTodoId, setCurrentTodoId] = useState<RealmIdType>(realmId());
 
   const [inProgressTodoList, setInProgressTodoList] = useState<TodoType[]>([]);
   const [doneTodoList, setDoneTodoList] = useState<TodoType[]>([]);
 
-  const handleGetTodoList = async () => {
-    try {
-      const data = await getAllTodoList();
-      // console.log('Screen Data', data);
-      // setTodoList(data);
-
-      // setTodoList([...data.inprogressTodos, ...data.doneTodos]);
-
-      setInProgressTodoList(data.inProgressTodos);
-      setDoneTodoList(data.doneTodos);
-    } catch (error) {
-      console.log('Screen Error', error);
-    }
-  };
-
   useEffect(() => {
-    const lists = realm.objects(TODOLIST_SCHEMA);
+    todos.addListener((data, changes) => {
+      const allSortedTodos = data.sorted('updatedOn', true);
+      const inProgressTodos = allSortedTodos.filter(item => !item.done);
+      const doneTodos = allSortedTodos.filter(item => item.done);
 
-    lists.addListener((data, changes) => {
-      console.log('Data', data);
-      console.log('Changes', changes);
-
-      handleGetTodoList();
+      setInProgressTodoList(inProgressTodos);
+      setDoneTodoList(doneTodos);
 
       if (changes.newModifications.length > 0) {
-        setCurrentItem(undefined);
+        setCurrentTodoId(realmId());
       }
     });
 
     return () => {
-      lists.removeListener(() => {
+      todos.removeListener(() => {
         console.log('Unmounted');
       });
-      // Remember to close the realm
-      // realm.close();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const todoListLength = useMemo(() => {
@@ -67,11 +56,11 @@ const Home: FC<Props> = (): JSX.Element => {
 
   return (
     <View style={styles.container}>
-      <AddInput item={currentItem} todoLength={todoListLength} />
+      <AddInput _id={currentTodoId} todoLength={todoListLength} />
       <HomeNavigator
         inProgressTodos={inProgressTodoList}
         doneTodos={doneTodoList}
-        setCurrentItem={setCurrentItem}
+        setCurrentTodoId={setCurrentTodoId}
       />
     </View>
   );
