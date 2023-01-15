@@ -1,18 +1,24 @@
 import React, {FC, useState, useEffect} from 'react';
-import {StyleSheet, View, Text, TextInput, Pressable} from 'react-native';
 import {
-  deleteAllTodoList,
-  insertNewTodoList,
-  updateTodoList,
-} from '../../database/allSchemas';
+  StyleSheet,
+  View,
+  Text,
+  TextInput,
+  Pressable,
+  Alert,
+} from 'react-native';
 import {TodoType} from '../screens/Home';
+import db from '../../database/sqlite';
+
+type OmitIdTodoType = Omit<TodoType, '_id'>;
 
 interface Props {
   item?: TodoType;
   todoLength: number;
+  getTodos: () => void;
 }
 
-const AddInput: FC<Props> = ({item, todoLength}): JSX.Element => {
+const AddInput: FC<Props> = ({item, todoLength, getTodos}): JSX.Element => {
   const [text, setText] = useState('');
 
   useEffect(() => {
@@ -23,12 +29,54 @@ const AddInput: FC<Props> = ({item, todoLength}): JSX.Element => {
     }
   }, [item?.name]);
 
-  const handleAdd = async () => {
+  const handleMessage = (rowsAffected: number) => {
+    if (rowsAffected > 0) {
+      setText('');
+      getTodos();
+      // Alert.alert('Transaction Success!');
+    } else {
+      Alert.alert('Transaction Failed!');
+    }
+  };
+
+  const handleInsert = ({name, createdOn, updatedOn}: OmitIdTodoType) => {
+    db.transaction(txn => {
+      txn.executeSql(
+        'INSERT INTO todos (name, createdOn, updatedOn) VALUES (?,?,?)',
+        [name, createdOn, updatedOn],
+        (tx, results) => {
+          // console.log('Results', results);
+          handleMessage(results.rowsAffected);
+        },
+        error => {
+          console.log(error);
+        },
+      );
+    });
+  };
+
+  const handleUpdate = ({_id, name, createdOn, updatedOn}: TodoType) => {
+    db.transaction(txn => {
+      txn.executeSql(
+        'UPDATE todos set name=?, createdOn=?, updatedOn=? where _id=?',
+        [name, createdOn, updatedOn, _id],
+        (tx, results) => {
+          // console.log('Results', results);
+          handleMessage(results.rowsAffected);
+        },
+        error => {
+          console.log(error);
+        },
+      );
+    });
+  };
+
+  const handleAddEdit = async () => {
     const name = text.trim();
     if (!name) {
       return;
     }
-    const currDate = new Date();
+    const currDate = new Date().toISOString();
     if (item) {
       const data = {
         _id: item._id,
@@ -36,26 +84,19 @@ const AddInput: FC<Props> = ({item, todoLength}): JSX.Element => {
         createdOn: item.createdOn,
         updatedOn: currDate,
       };
-      console.log(data);
       try {
-        const insertedTodo = await updateTodoList(data);
-        console.log('Updated Todo', insertedTodo);
-        setText('');
+        handleUpdate(data);
       } catch (error) {
         console.log('Screen Error', error);
       }
     } else {
       const data = {
-        _id: Math.floor(Date.now() / 1000),
         name,
         createdOn: currDate,
         updatedOn: currDate,
       };
-      console.log(data);
       try {
-        const insertedTodo = await insertNewTodoList(data);
-        console.log('Inserted Todo', insertedTodo);
-        setText('');
+        handleInsert(data);
       } catch (error) {
         console.log('Screen Error', error);
       }
@@ -63,12 +104,19 @@ const AddInput: FC<Props> = ({item, todoLength}): JSX.Element => {
   };
 
   const handleDeleteAll = async () => {
-    try {
-      const deletedAll = await deleteAllTodoList();
-      console.log('Deleted All Todos', deletedAll);
-    } catch (error) {
-      console.log(error);
-    }
+    db.transaction(txn => {
+      txn.executeSql(
+        'DELETE FROM todos',
+        [],
+        (tx, results) => {
+          // console.log('Results', results);
+          handleMessage(results.rowsAffected);
+        },
+        error => {
+          console.log(error);
+        },
+      );
+    });
   };
 
   return (
@@ -85,7 +133,7 @@ const AddInput: FC<Props> = ({item, todoLength}): JSX.Element => {
           value={text}
           onChangeText={setText}
         />
-        <Pressable onPress={handleAdd} style={styles.btn}>
+        <Pressable onPress={handleAddEdit} style={styles.btn}>
           <Text style={styles.btnText}>{item ? 'Update' : 'Add'}</Text>
         </Pressable>
       </View>
@@ -107,6 +155,7 @@ const styles = StyleSheet.create({
     flex: 1,
     marginRight: 15,
     height: 40,
+    fontWeight: '600',
   },
   btn: {
     backgroundColor: 'goldenrod',

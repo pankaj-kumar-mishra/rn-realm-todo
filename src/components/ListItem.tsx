@@ -4,7 +4,7 @@ import {StyleSheet, View, Text, Pressable} from 'react-native';
 interface Props {
   _id: number;
   name: string;
-  updatedOn: Date;
+  updatedOn: string;
   onEditPress: () => void;
   onDeletePress: () => void;
 }
@@ -19,7 +19,7 @@ const ListItem: FC<Props> = ({
     <View style={styles.container}>
       <View style={styles.flex1}>
         <Text style={styles.name}>{name}</Text>
-        <Text style={styles.date}>{updatedOn.toString()}</Text>
+        <Text style={styles.date}>{updatedOn}</Text>
       </View>
       <View>
         <Pressable onPress={onEditPress} style={[styles.btn, styles.editBtn]}>

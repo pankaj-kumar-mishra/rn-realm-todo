@@ -1,22 +1,23 @@
-import React, {FC, useState, useEffect} from 'react';
-import {FlatList, StyleSheet, View} from 'react-native';
+import React, {FC, useState, useEffect, useCallback} from 'react';
+import {FlatList, StyleSheet, View, Alert, Text} from 'react-native';
 import {AddInput, ListItem} from '../components';
-import realm, {
-  deleteTodoList,
-  getAllTodoList,
-  TODOLIST_SCHEMA,
-} from '../../database/allSchemas';
+
+import db from '../../database/sqlite';
 
 interface Props {}
 
 export type TodoType = {
   _id: number;
   name: string;
-  createdOn: Date;
-  updatedOn: Date;
+  // TODO We will add later
+  createdOn: string;
+  updatedOn: string;
 };
 
+// PK Reference https://github.com/Gauravbhadauria/sqlitedemo2
+
 const Home: FC<Props> = (): JSX.Element => {
+  const [loading, setLoading] = useState(true);
   const [todoList, setTodoList] = useState<TodoType[]>([]);
   const [currentItem, setCurrentItem] = useState<TodoType>();
 
@@ -24,59 +25,91 @@ const Home: FC<Props> = (): JSX.Element => {
   // const [inProgressTodoList, setInProgressTodoList] = useState<TodoType[]>([]);
   // const [doneTodoList, setDoneTodoList] = useState<TodoType[]>([]);
 
-  const handleGetTodoList = async () => {
-    try {
-      const data = await getAllTodoList();
-      console.log('Screen Data', data);
-      // setTodoList(data);
-
-      setTodoList([...data.inprogressTodos, ...data.doneTodos]);
-    } catch (error) {
-      console.log('Screen Error', error);
-    }
-  };
-
-  // Not required to fetch because we are handling in listener in changes
   // useEffect(() => {
-  //   handleGetTodoList();
+  //   db.transaction((txn) => {
+  //     txn.executeSql(
+  //       query,  //Query to execute as prepared statement
+  //       argsToBePassed[],  //Argument to pass for the prepared statement
+  //       function(tx, res) {}  //Callback function to handle the result
+  //     );
+  //   });
   // }, []);
 
   useEffect(() => {
-    const lists = realm.objects(TODOLIST_SCHEMA);
-
-    lists.addListener((data, changes) => {
-      // callback has data and changes
-      // console.log('In Listener data', data);
-      // console.log('In Listener changes', changes);
-      // BUG typescript error
-      // setTodoList(data as any); // it has some rendering issue
-
-      handleGetTodoList();
-
-      // console.log(changes);
-      if (changes.newModifications.length > 0) {
-        setCurrentItem(undefined);
-      }
+    db.transaction(txn => {
+      txn.executeSql(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name='todos'",
+        [],
+        (tx, res) => {
+          console.log('item:', res.rows.length);
+          if (res.rows.length === 0) {
+            txn.executeSql('DROP TABLE IF EXISTS todos', []);
+            txn.executeSql(
+              'CREATE TABLE IF NOT EXISTS todos(_id INTEGER PRIMARY KEY AUTOINCREMENT, name VARCHAR(20), createdOn TEXT, updatedOn TEXT)',
+              [],
+            );
+          } else {
+            // txn.executeSql('DROP TABLE IF EXISTS todos', []);
+            console.log('todos table already there');
+          }
+        },
+      );
     });
-
-    return () => {
-      lists.removeListener(() => {
-        console.log('Unmounted');
-      });
-      // Remember to close the realm
-      realm.close();
-    };
   }, []);
+
+  const getTodos = useCallback(() => {
+    setLoading(true);
+    db.transaction(txn => {
+      txn.executeSql(
+        'SELECT * FROM todos',
+        [],
+        (tx, results) => {
+          // console.log('Results', results);
+          var temp = [];
+          for (let i = 0; i < results.rows.length; ++i) {
+            temp.push(results.rows.item(i));
+          }
+          setTodoList(temp);
+          setCurrentItem(undefined);
+          setLoading(false);
+        },
+        error => {
+          console.log(error);
+          setLoading(false);
+        },
+      );
+    });
+  }, []);
+
+  useEffect(() => {
+    getTodos();
+  }, [getTodos]);
 
   const handleEdit = (item: TodoType) => {
     console.log(item);
     setCurrentItem(item);
   };
 
-  const handleDelete = async (id: number) => {
+  const handleDelete = async (_id: number) => {
     try {
-      const deletedTodo = await deleteTodoList(id);
-      console.log('Deleted todo', deletedTodo);
+      db.transaction(txn => {
+        txn.executeSql(
+          'DELETE FROM todos where _id=?',
+          [_id],
+          (tx, results) => {
+            console.log('Results', results);
+            if (results.rowsAffected > 0) {
+              getTodos();
+              // Alert.alert('Transaction Success!');
+            } else {
+              Alert.alert('Transaction Failed!');
+            }
+          },
+          error => {
+            console.log(error);
+          },
+        );
+      });
     } catch (error) {
       console.log(error);
     }
@@ -84,12 +117,21 @@ const Home: FC<Props> = (): JSX.Element => {
 
   return (
     <View style={styles.container}>
-      <AddInput item={currentItem} todoLength={todoList.length} />
+      <AddInput
+        item={currentItem}
+        todoLength={todoList.length}
+        getTodos={getTodos}
+      />
       <FlatList
         data={todoList}
         keyExtractor={item => item._id.toString()}
         extraData={todoList}
         showsVerticalScrollIndicator={false}
+        ListEmptyComponent={
+          <Text style={styles.notFound}>
+            {loading ? 'Loading...' : 'No Record Found!'}
+          </Text>
+        }
         renderItem={({item}) => {
           return (
             <ListItem
@@ -111,6 +153,13 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 20,
     // backgroundColor: 'red',
+  },
+  notFound: {
+    textAlign: 'center',
+    marginTop: 50,
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#f00',
   },
 });
 
